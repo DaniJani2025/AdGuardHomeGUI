@@ -21,11 +21,11 @@ public partial class MainWindow : Window
     private readonly AdGuardService _service = new();
     private readonly DispatcherTimer _timer = new();
     private readonly BrowserService _browser = new();
-    private readonly AdGuardApi _api = new();
     public bool ExitRequested { get; set; }
     public MainWindow()
     {
         InitializeComponent();
+        TestLogin();
         Closing += MainWindow_Closing;
 
         _timer.Interval = TimeSpan.FromSeconds(1);
@@ -33,6 +33,27 @@ public partial class MainWindow : Window
         _timer.Start();
 
         UpdateServiceStatus();
+    }
+
+    private async void TestLogin()
+    {
+        var auth = new AuthenticationService();
+
+        bool success = await auth.LoginAsync("dani", "Dcjjani@2000");
+
+        if (!success)
+        {
+            MessageBox.Show("Login failed.");
+            return;
+        }
+
+        var api = new AdGuardApiService(auth);
+
+        await api.SetProtectionAsync(true);
+
+        bool enabled = await api.GetProtectionStatusAsync();
+
+        MessageBox.Show(enabled.ToString());
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
@@ -143,26 +164,12 @@ public partial class MainWindow : Window
 
     private async void EnableProtection_Click(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            await _api.SetProtection(true);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message);
-        }
+        
     }
 
     private async void DisableProtection_Click(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            await _api.SetProtection(false);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message);
-        }
+
     }
 
     private void OpenDashboard_Click(object sender, RoutedEventArgs e)
