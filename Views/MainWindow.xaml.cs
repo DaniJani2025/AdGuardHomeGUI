@@ -1,4 +1,5 @@
-﻿using AdGuardHomeGUI.Services;
+﻿using AdGuardHomeGUI.Interfaces;
+using AdGuardHomeGUI.Services;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.ServiceProcess;
@@ -14,20 +15,21 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace AdGuardHomeGUI;
+namespace AdGuardHomeGUI.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly AuthenticationService _authenticationService = new();
+    private readonly AuthenticationService _authenticationService;
     private readonly AdGuardApiService _api;
     private readonly AdGuardService _service = new();
     private readonly DispatcherTimer _timer = new();
     private readonly BrowserService _browser = new();
     public bool ExitRequested { get; set; }
-    public MainWindow()
+    public MainWindow(AuthenticationService authenticationService)
     {
         InitializeComponent();
 
+        _authenticationService = authenticationService;
         _api = new AdGuardApiService(_authenticationService);
 
         Closing += MainWindow_Closing;
@@ -38,20 +40,7 @@ public partial class MainWindow : Window
 
         UpdateServiceStatus();
 
-        _ = InitializeApiAsync();
-    }
-
-    private async Task InitializeApiAsync()
-    {
-        bool success = await _authenticationService.LoginAsync("username", "password");
-
-        if (!success)
-        {
-            MessageBox.Show("Failed to login to AdGuard Home.");
-            return;
-        }
-
-        await UpdateProtectionStatus();
+        _ = UpdateProtectionStatus();
     }
 
     private async Task UpdateProtectionStatus()

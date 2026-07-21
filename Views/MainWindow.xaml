@@ -1,4 +1,4 @@
-﻿<Window x:Class="AdGuardHomeGUI.MainWindow"
+﻿<Window x:Class="AdGuardHomeGUI.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="AdGuard Home GUI"

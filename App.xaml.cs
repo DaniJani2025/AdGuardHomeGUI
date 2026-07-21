@@ -1,4 +1,5 @@
-﻿using H.NotifyIcon;
+﻿using AdGuardHomeGUI.Views;
+using H.NotifyIcon;
 using System.Configuration;
 using System.Data;
 using System.Windows;
@@ -13,6 +14,10 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        var loginWindow = new LoginWindow();
+        MainWindow = loginWindow;
+        loginWindow.Show();
 
         TrayIcon.ForceCreate();
     }
@@ -38,7 +43,7 @@ public partial class App : Application
 
     private void ExitTray_Click(object sender, RoutedEventArgs e)
     {
-        if (Current.MainWindow is MainWindow window)
+        if (Current.MainWindow is Views.MainWindow window)
         {
             window.ExitRequested = true;
             window.Close();
