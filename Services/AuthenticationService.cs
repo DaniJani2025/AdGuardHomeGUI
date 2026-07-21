@@ -19,12 +19,14 @@ public class AuthenticationService : IAuthenticationService
     {
         _cookieContainer = new CookieContainer();
 
-        var handler = new HttpClientHandler
+        var httpHandler = new HttpClientHandler
         {
             CookieContainer = _cookieContainer
         };
 
-        _httpClient = new HttpClient(handler)
+        var loggingHandler = new LoggingHandler(httpHandler);
+
+        _httpClient = new HttpClient(loggingHandler)
         {
             BaseAddress = new Uri("http://127.0.0.1")
         };

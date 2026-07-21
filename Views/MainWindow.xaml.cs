@@ -18,6 +18,8 @@ namespace AdGuardHomeGUI;
 
 public partial class MainWindow : Window
 {
+    private readonly AuthenticationService _authenticationService = new();
+    private readonly AdGuardApiService _api;
     private readonly AdGuardService _service = new();
     private readonly DispatcherTimer _timer = new();
     private readonly BrowserService _browser = new();
@@ -25,7 +27,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        TestLogin();
+
+        _api = new AdGuardApiService(_authenticationService);
+
         Closing += MainWindow_Closing;
 
         _timer.Interval = TimeSpan.FromSeconds(1);
@@ -33,27 +37,31 @@ public partial class MainWindow : Window
         _timer.Start();
 
         UpdateServiceStatus();
+
+        _ = InitializeApiAsync();
     }
 
-    private async void TestLogin()
+    private async Task InitializeApiAsync()
     {
-        var auth = new AuthenticationService();
-
-        bool success = await auth.LoginAsync("dani", "Dcjjani@2000");
+        bool success = await _authenticationService.LoginAsync("username", "password");
 
         if (!success)
         {
-            MessageBox.Show("Login failed.");
+            MessageBox.Show("Failed to login to AdGuard Home.");
             return;
         }
 
-        var api = new AdGuardApiService(auth);
+        await UpdateProtectionStatus();
+    }
 
-        await api.SetProtectionAsync(true);
+    private async Task UpdateProtectionStatus()
+    {
+        bool enabled = await _api.GetProtectionStatusAsync();
 
-        bool enabled = await api.GetProtectionStatusAsync();
+        ProtectionStatus.Text = $"Protection: {(enabled ? "Enabled" : "Disabled")}";
 
-        MessageBox.Show(enabled.ToString());
+        EnableProtectionButton.IsEnabled = !enabled;
+        DisableProtectionButton.IsEnabled = enabled;
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
@@ -164,12 +172,44 @@ public partial class MainWindow : Window
 
     private async void EnableProtection_Click(object sender, RoutedEventArgs e)
     {
-        
+        try
+        {
+            SetBusy(true);
+
+            await _api.SetProtectionAsync(true);
+
+            await UpdateProtectionStatus();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Error");
+        }
+        finally
+        {
+            SetBusy(false);
+            await UpdateProtectionStatus();
+        }
     }
 
     private async void DisableProtection_Click(object sender, RoutedEventArgs e)
     {
+        try
+        {
+            SetBusy(true);
 
+            await _api.SetProtectionAsync(false);
+
+            await UpdateProtectionStatus();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Error");
+        }
+        finally
+        {
+            SetBusy(false);
+            await UpdateProtectionStatus();
+        }
     }
 
     private void OpenDashboard_Click(object sender, RoutedEventArgs e)
@@ -181,6 +221,9 @@ public partial class MainWindow : Window
     {
         StartServiceButton.IsEnabled = !busy;
         StopServiceButton.IsEnabled = !busy;
+
+        EnableProtectionButton.IsEnabled = !busy;
+        DisableProtectionButton.IsEnabled = !busy;
 
         Mouse.OverrideCursor = busy
             ? Cursors.Wait

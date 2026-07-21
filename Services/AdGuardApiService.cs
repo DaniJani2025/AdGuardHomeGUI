@@ -1,6 +1,7 @@
 ﻿using AdGuardHomeGUI.Interfaces;
 using AdGuardHomeGUI.Models;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -28,22 +29,26 @@ public class AdGuardApiService : IAdGuardApiService
         return status!.ProtectionEnabled;
     }
 
-        public async Task SetProtectionAsync(bool enabled)
+    public async Task SetProtectionAsync(bool enabled)
+    {
+        var requestBody = new ProtectionRequest
         {
-            var requestBody = new ProtectionRequest
-            {
-                Enabled = enabled,
-                Duration = null
-            };
+            Enabled = enabled,
+            Duration = null
+        };
 
-            var json = JsonSerializer.Serialize(requestBody);
+        var json = JsonSerializer.Serialize(requestBody);
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, "/control/protection");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/control/protection");
 
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        // AdGuard Home rejects "application/json; charset=utf-8"
+        // and only accepts a bare "application/json".
+        request.Content = new StringContent(json, Encoding.UTF8);
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        request.Content.Headers.ContentType.CharSet = "";
 
-            var response = await _authenticationService.HttpClient.SendAsync(request);
+        var response = await _authenticationService.HttpClient.SendAsync(request);
 
-            response.EnsureSuccessStatusCode();
-        }
+        response.EnsureSuccessStatusCode();
+    }
 }

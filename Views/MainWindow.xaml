@@ -81,6 +81,7 @@
                 Click="StopService_Click"/>
 
             <Button
+                x:Name="EnableProtectionButton"
                 Grid.Row="1"
                 Grid.Column="0"
                 Margin="0,6,6,0"
@@ -89,6 +90,7 @@
                  Click="EnableProtection_Click"/>
 
             <Button
+                x:Name="DisableProtectionButton"
                 Grid.Row="1"
                 Grid.Column="1"
                 Margin="6,6,0,0"
