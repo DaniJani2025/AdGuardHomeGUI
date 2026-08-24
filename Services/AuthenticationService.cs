@@ -10,6 +10,7 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly CookieContainer _cookieContainer;
     private readonly HttpClient _httpClient;
+    private readonly SessionStorageService _sessionStorage = new();
 
     public HttpClient HttpClient => _httpClient;
 
@@ -32,7 +33,22 @@ public class AuthenticationService : IAuthenticationService
         };
     }
 
-    public async Task<bool> LoginAsync(string username, string password)
+    private Cookie? GetAuthenticationCookie()
+    {
+        var cookies = _cookieContainer.GetCookies(new Uri("http://127.0.0.1"));
+
+        foreach (Cookie cookie in cookies)
+        {
+            return cookie;
+        }
+
+        return null;
+    }
+
+    public async Task<bool> LoginAsync(
+        string username,
+        string password,
+        bool rememberMe)
     {
         var request = new LoginRequest
         {
@@ -40,7 +56,9 @@ public class AuthenticationService : IAuthenticationService
             Password = password
         };
 
-        var response = await _httpClient.PostAsJsonAsync("/control/login", request);
+        var response = await _httpClient.PostAsJsonAsync(
+            "/control/login",
+            request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -49,7 +67,68 @@ public class AuthenticationService : IAuthenticationService
         }
 
         IsAuthenticated = true;
+
+        if (rememberMe)
+        {
+            Cookie? cookie = GetAuthenticationCookie();
+
+            if (cookie != null)
+            {
+                _sessionStorage.Save(new SessionCookie
+                {
+                    Name = cookie.Name,
+                    Value = cookie.Value,
+                    Domain = cookie.Domain,
+                    Path = cookie.Path,
+                    Expires = cookie.Expires == DateTime.MinValue
+                        ? null
+                        : cookie.Expires
+                });
+            }
+        }
+        else
+        {
+            _sessionStorage.Delete();
+        }
+
         return true;
+    }
+
+    public async Task<bool> TryRestoreSessionAsync()
+    {
+        try
+        {
+            SessionCookie? savedCookie = _sessionStorage.Load();
+
+            if (savedCookie == null)
+                return false;
+
+            var cookie = new Cookie(
+                savedCookie.Name,
+                savedCookie.Value,
+                savedCookie.Path,
+                savedCookie.Domain);
+
+            _cookieContainer.Add(cookie);
+
+            var response = await _httpClient.GetAsync("/control/status");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _sessionStorage.Delete();
+                IsAuthenticated = false;
+                return false;
+            }
+
+            IsAuthenticated = true;
+            return true;
+        }
+        catch
+        {
+            _sessionStorage.Delete();
+            IsAuthenticated = false;
+            return false;
+        }
     }
 
     public void Logout()

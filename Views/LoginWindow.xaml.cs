@@ -25,7 +25,8 @@ public partial class LoginWindow : Window
 
             bool success = await _authenticationService.LoginAsync(
                 UsernameTextBox.Text,
-                PasswordBox.Password);
+                PasswordBox.Password,
+                RememberMeCheckBox.IsChecked == true);
 
             if (!success)
             {

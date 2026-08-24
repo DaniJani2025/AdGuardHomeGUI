@@ -13,7 +13,8 @@ namespace AdGuardHomeGUI.Interfaces
 
         bool IsAuthenticated { get; }
 
-        Task<bool> LoginAsync(string username, string password);
+        Task<bool> LoginAsync(string username, string password, bool rememberMe);
+        Task<bool> TryRestoreSessionAsync();
 
         void Logout();
     }
