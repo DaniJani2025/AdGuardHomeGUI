@@ -218,4 +218,30 @@ public partial class MainWindow : Window
             ? Cursors.Wait
             : null;
     }
+
+    private async void Logout_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            SetBusy(true);
+
+            await _authenticationService.LogoutAsync();
+
+            var loginWindow = new LoginWindow();
+
+            Application.Current.MainWindow = loginWindow;
+
+            loginWindow.Show();
+
+            Close();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Logout Error");
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
 }

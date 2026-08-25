@@ -15,7 +15,6 @@ namespace AdGuardHomeGUI.Interfaces
 
         Task<bool> LoginAsync(string username, string password, bool rememberMe);
         Task<bool> TryRestoreSessionAsync();
-
-        void Logout();
+        Task LogoutAsync();
     }
 }

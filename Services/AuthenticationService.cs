@@ -131,8 +131,29 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public void Logout()
+    public async Task LogoutAsync()
     {
-        IsAuthenticated = false;
+        try
+        {
+            if (IsAuthenticated)
+            {
+                await _httpClient.GetAsync("/control/logout");
+            }
+        }
+        finally
+        {
+            _cookieContainer.GetCookies(
+                new Uri("http://127.0.0.1"))
+                .Cast<Cookie>()
+                .ToList()
+                .ForEach(cookie =>
+                    _cookieContainer.SetCookies(
+                        new Uri("http://127.0.0.1"),
+                        $"{cookie.Name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT"));
+
+            _sessionStorage.Delete();
+
+            IsAuthenticated = false;
+        }
     }
 }
